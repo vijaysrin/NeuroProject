@@ -4,13 +4,19 @@ clc
 
 load('p2_subject1Pre.mat');
 
-labels = [subject1Pre.MI(1).hdr.emgLabels; subject1Pre.MI(2).hdr.emgLabels; subject1Pre.MI(3).hdr.emgLabels];
-signal = [subject1Pre.MI(1).eeg; subject1Pre.MI(2).eeg; subject1Pre.MI(3).eeg];
-triggers = [subject1Pre.MI(1).hdr.triggers; subject1Pre.MI(2).hdr.triggers; subject1Pre.MI(3).hdr.triggers];
+labels = [subject1Pre.MI(1).hdr.eegLabels; subject1Pre.MI(2).hdr.eegLabels; subject1Pre.MI(3).hdr.eegLabels];
+signal = [subject1Pre.MI(1).eeg(1:length(subject1Pre.MI(1).eeg) - 224,1:4); subject1Pre.MI(2).eeg(1:length(subject1Pre.MI(2).eeg) - 224,1:4); subject1Pre.MI(3).eeg(1:length(subject1Pre.MI(3).eeg) - 224,1:4)];
+triggers = [subject1Pre.MI(1).hdr.triggers(1:length(subject1Pre.MI(1).hdr.triggers) - 224,1); subject1Pre.MI(2).hdr.triggers(1:length(subject1Pre.MI(2).hdr.triggers) - 224,1); subject1Pre.MI(3).hdr.triggers(1:length(subject1Pre.MI(3).hdr.triggers) - 224,1)];
 fs = subject1Pre.MI(1).hdr.fs;
 %disp(length(subject1Pre.MI(1).emg(:,1)));
 time = 0:1/fs:length(signal(:,1))/fs-1/fs;
 
+fc1 = 8;
+fc2 = 12;
+Wp = [fc1 fc2]*2/fs;
+[z,p,k] = butter(4,Wp,'bandpass');
+[sos,g]=zp2sos(z,p,k);
+signal=filtfilt(sos,g,signal);
 
 
 [rows_start_1,cols_start_1,values_start_1] = find(triggers==101);
@@ -46,7 +52,7 @@ Fall1 = find(triggers==102); % gets the ending points of stimulations
 Rise2 = find(triggers==201); % gets the starting points of stimulations
 Fall2 = find(triggers==202); % gets the ending points of stimulations
 WSize = 0.1;
-Olap = 0.25;
+Olap = 0.1;
 WSize = floor(WSize*fs);
 nOlap = floor(Olap*WSize);  % overlap of successive frames, half of WSize
 hop = WSize-nOlap;	    % amount to advance for next data frame
@@ -69,8 +75,8 @@ for i = 1:len
     feat_labels_2(i) = sum(arrayfun(@(t) ((i-1)*hop+1) >= Rise2(t) && ((i-1)*hop+WSize) <= Fall2(t), 1:length(Rise2)));
 end
 
-feat_labels_1(feat_labels_1==1) = 1000;
-feat_labels_2(feat_labels_2==1) = 1000;
+%feat_labels_1(feat_labels_1==1) = 1000;
+%feat_labels_2(feat_labels_2==1) = 1000;
 %disp(feat_labels_1);
 %disp(size(MAV));
 plot((1:length(MAV)), MAV, 'g');
@@ -79,12 +85,12 @@ plot((1:length(feat_labels_1)), feat_labels_1, 'b');
 hold on
 plot((1:length(feat_labels_2)), feat_labels_2, 'r');
 
-MAV_class1 = MAV(find(feat_labels_1==1000));
+MAV_class1 = MAV(find(feat_labels_1==1));
 MAV_rest1 = MAV(find(feat_labels_1 == 0 & feat_labels_2 == 0));
 MAV_Data_Class1vsRest = [MAV_class1 MAV_rest1];
 MAV_Labels_Class1vsRest = [ones(1,length(MAV_class1)) 2*ones(1,length(MAV_rest1))];
 
-MAV_class2 = MAV(find(feat_labels_1==1000));
+MAV_class2 = MAV(find(feat_labels_1==1));
 MAV_rest2 = MAV(find(feat_labels_1 == 0 & feat_labels_2 == 0));
 MAV_Data_Class2vsRest = [MAV_class2 MAV_rest2];
 MAV_Labels_Class2vsRest = [ones(1,length(MAV_class2)) 2*ones(1,length(MAV_rest2))];
