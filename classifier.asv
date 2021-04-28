@@ -1,0 +1,62 @@
+clear all
+close all
+clc
+
+load('p2_subject1Pre.mat');
+
+labels = [subject1Pre.MI(1).hdr.emgLabels; subject1Pre.MI(2).hdr.emgLabels; subject1Pre.MI(3).hdr.emgLabels];
+signal = [subject1Pre.MI(1).emg; subject1Pre.MI(2).emg; subject1Pre.MI(3).emg];
+triggers = [subject1Pre.MI(1).hdr.triggers; subject1Pre.MI(2).hdr.triggers; subject1Pre.MI(3).hdr.triggers];
+fs = subject1Pre.MI(1).hdr.fs;
+%disp(length(subject1Pre.MI(1).emg(:,1)));
+time = 0:1/fs:length(signal(:,1))/fs-1/fs;
+
+
+[rows_start_1,cols_start_1,values_start_1] = find(triggers==101);
+timings_start_act = triggers(rows_start_a);
+
+[rows_end_1,cols_end_1,values_end_1] = find(triggers==102);
+%disp(triggers);
+timings_end_act = triggers(rows_end_a);
+
+
+[rows_start_1,cols_start_1,values_start_1] = find(triggers==101);
+
+
+trigger_plot_1 = zeros(length(signal), 1);
+trigger_plot_2 = zeros(length(signal), 1);
+
+for x = 1:length(rows_start_a)
+    start = rows_start_1(x);
+    ending = rows_end_1(x);
+    trigger_plot(start:ending) = 1;
+end
+
+Rise1 = gettrigger(trigger_plot,0.5); % gets the starting points of stimulations
+Fall1 = gettrigger(-trigger_plot,-0.5); % gets the ending points of stimulations
+
+WSize = 0.1;
+Olap = 0.25;
+WSize = floor(WSize*fs);
+nOlap = floor(Olap*WSize);  % overlap of successive frames, half of WSize
+hop = WSize-nOlap;	    % amount to advance for next data frame
+
+
+
+
+nx = length(signal);	            % length of input vector
+len = fix((nx - (WSize-hop))/hop);	%length of output vector = total frames
+MAV = deal(zeros(1,len));
+feat_labels = deal(zeros(1,len));
+%MAV = movmean(signal, WSize);
+%disp(MAV);
+
+for i = 1:len
+    segment = signal(((i-1)*hop+1):((i-1)*hop+WSize),1);
+    MAV(i) = sum(abs(segment)) / WSize;
+    feat_labels(i) = sum(arrayfun(@(t) ((i-1)*hop+1) >= Rise1(t) && ((i-1)*hop+WSize) <= Fall1(t), 1:length(Rise1)));
+end
+disp(size(MAV));
+plot((1:length(MAV)), MAV, 'b');
+hold on
+plot((1:length(feat_labels)), feat_labels, 'b');

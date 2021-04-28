@@ -56,7 +56,7 @@ xlabel('Time (s)')
 ylabel('Amplitude (uV)')
 title('Run 1 Subject 1 Raw EMG Data with Triggers')
 legend([labels 'Triggers'])
-saveas(gcf, 'sub1_raw_emg.png');
+%saveas(gcf, 'sub1_raw_emg.png');
 
 %% PSD Plots
 figure('units','normalized','Position',[0.1,0.1,0.5,0.5])
